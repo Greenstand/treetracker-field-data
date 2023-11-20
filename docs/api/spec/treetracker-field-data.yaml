@@ -1,0 +1,1954 @@
+openapi: 3.0.0
+info:
+  title: Treetracker Field Data API
+  version: 1.12.0
+  description: The API for Greenstand that manages the raw tree tracking data uploaded from devices collected via the Treetracker app.
+  contact:
+    name: Greenstand Support
+    email: admin@greenstand.com
+  license:
+    name: GPL 2.0
+    url: 'https://www.gnu.org/licenses/gpl-2.0.en.html'
+servers:
+  - url: https://{environment}-k8s.treetracker.org/field-data
+    variables:
+      environment:
+        default: dev
+        enum:
+          - dev     # Development server
+          - test    # Test server
+          - prod    # Production server
+paths:
+  '/raw-captures':
+    description: A list of HTTP methods that supports creation, retrieval, and update of capture data.
+    summary: Operations supported for captures resource
+    get:
+      tags:
+        - Raw Captures
+      operationId: get-rawCaptures
+      summary: Retrieves capture data with or without a filtering criteria
+      description: Retrieves capture data based on a filtering criteria or without filtering criteria. Result is in the form of an array of capture objects. Pagination is supported by utilizing the `limit` and `offset` parameters.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: The status of the capture data.
+          schema:
+            $ref: '#/components/schemas/RawCaptureStatus'
+          example: approved
+        - name: limit
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: The number of items to retrieve, this defaults to 100 if not specified.
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+            example: 25
+        - name: offset
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: |-
+            To paginate the results, use `offset` to skip the number of records that has already been consumed by prior API invocations. 
+            
+            For example, if there are 100 records and each invocation has `limit` value set to 10, an incrementing `offset` value by  10 would paginate to show all 100 records in 10 invocations. The first one with no offset, second invocation with 20, third with 30, and all the way to last one with offset value of 90.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: bulk_pack_file_name
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: Specify the name of the bulk pack file to retrieve the records stored in it.
+          schema:
+            type: string
+            example: 2023-04-03-21-02-36_80229004-3250-43e0-aa77-b23815df7042_f305c764724ed99f29030687cc4afb55.json
+      responses:
+        '200':
+          description: Successfully retrieve the list of raw captures matching the specified query parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  raw_captures:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RawCapture'
+                  links:
+                    type: object
+                    properties:
+                      next:
+                        type: string
+                      prev:
+                        type: string
+                  query:
+                    description: Contains the total number of raw capture objects returned as result, and the pagination parameters. Also contains other query parameters, if they are specified.
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        minimum: 0
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+              examples:
+                example:
+                  $ref: '#/components/examples/RawCapturesGet'
+        '422':
+          $ref: '#/components/responses/InvalidQueryParametersLimit'
+    post:
+      tags:
+        - Raw Captures
+      operationId: post-rawCaptures
+      summary: Create a new raw capture object
+      description: Create a new raw capture object. This endpoint is typically meant to be called by the Bulk Pack Transformer.
+      requestBody:
+        $ref: '#/components/requestBodies/RawCapturePostRequest'
+      responses:
+        '200':
+          description: Returns the raw capture object if it already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RawCapture'
+              examples:
+                example:
+                  $ref: '#/components/examples/RawCaptureSingle'
+        '201':
+          description: Successfully create a new raw capture object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RawCaptureCreated'
+              examples:
+                example:
+                  $ref: '#/components/examples/RawCaptureCreatedExample'
+        '409':
+          $ref: '#/components/responses/InvalidCaptureSession'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaTypeError'
+        '422':
+          $ref: '#/components/responses/InvalidRequestBodyID'
+  '/raw-captures/{raw_capture_id}':
+    get:
+      tags:
+        - Raw Captures
+      operationId: get-rawCaptures-rawCaptureId
+      summary: Get a single raw capture
+      description: Get the raw capture that matches the specified ID.
+      parameters:
+        - name: raw_capture_id
+          in: path
+          required: true
+          deprecated: false
+          description: The ID of the object.
+          schema:
+            type: string
+            format: uuid
+            example: beca4f73-a135-42c0-bd5b-6963ae46ae63
+      responses:
+        '200':
+          description: Successfully retrieve the raw capture object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RawCapture'
+              examples:
+                example:
+                  $ref: '#/components/examples/RawCaptureSingle'
+        '404':
+          $ref: '#/components/responses/RawCaptureNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidParameterCaptureID'
+  '/raw-captures/{raw_capture_id}/reject':
+    patch:
+      tags:
+        - Raw Captures
+      operationId: patch-rawCaptures-rawCaptureId-reject
+      summary: Reject a raw capture
+      description: Reject an unprocessed raw capture. This endpoint is typically meant to be called by the Admin Panel.
+      parameters:
+        - name: raw_capture_id
+          in: path
+          required: true
+          deprecated: false
+          description: The ID of the object.
+          schema:
+            type: string
+            format: uuid
+            example: beca4f73-a135-42c0-bd5b-6963ae46ae63
+      requestBody:
+        $ref: '#/components/requestBodies/RawCapturePatchRequest'
+      responses:
+        '200':
+          description: Successfully reject the raw capture. The `state` is changed to `rejected`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RawCapture'
+              examples:
+                example:
+                  $ref: '#/components/examples/RawCaptureRejected'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaTypeError'
+        '422':
+          $ref: '#/components/responses/InvalidParameterCaptureID'
+
+  '/session':
+    get:
+      tags:
+        - Session
+      operationId: get-session
+      summary: Get sessions data
+      description: Get the list of all sessions matching the query parameters.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: The number of items to retrieve, this defaults to 100 if not specified.
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+            example: 25
+        - name: offset
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: |-
+            To paginate the results, use `offset` to skip the number of records that has already been consumed by prior API invocations. 
+            
+            For example, if there are 100 records and each invocation has `limit` value set to 10, an incrementing `offset` value by  10 would paginate to show all 100 records in 10 invocations. The first one with no offset, second invocation with 20, third with 30, and all the way to last one with offset value of 90.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: bulk_pack_file_name
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: Specify the name of the bulk pack file to retrieve the records stored in it.
+          schema:
+            type: string
+            example: 2023-04-03-21-02-36_80229004-3250-43e0-aa77-b23815df7042_f305c764724ed99f29030687cc4afb55.json
+      responses:
+        '200':
+          description: Successfully retreive the session objects matching the query parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+                  links:
+                    type: object
+                    properties:
+                      next:
+                        type: string
+                      prev:
+                        type: string
+                  query:
+                    description: Contains the total number of session objects returned as result, and the pagination parameters. Also contains other query parameters, if they are specified.
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        minimum: 0
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+              examples:
+                example:
+                  $ref: '#/components/examples/SessionGet'
+        '422':
+          $ref: '#/components/responses/InvalidQueryParametersLimit'
+    post:
+      tags:
+        - Session
+      operationId: post-session
+      summary: Create a new session object
+      description: Create a new session object. This endpoint is typically used by the Bulk Pack Transformer.
+      requestBody:
+        $ref: '#/components/requestBodies/SessionPostRequest'
+      responses:
+        '200':
+          description: Returns the session object if it already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+              examples:
+                example:
+                  $ref: '#/components/examples/SessionSingle'
+        '201':
+          description: Successfully create a new session object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionCreated'
+              examples:
+                example:
+                  $ref: '#/components/examples/SessionCreatedExample'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaTypeError'
+        '422':
+          $ref: '#/components/responses/InvalidRequestBodyID'
+  '/session/{session_id}':
+    get:
+      tags:
+        - Session
+      operationId: get-session-sessionId
+      summary: Get a single session object
+      description: Get the session object matching the ID.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          deprecated: false
+          description: The ID of the object.
+          schema:
+            type: string
+            format: uuid
+            example: beca4f73-a135-42c0-bd5b-6963ae46ae63
+      responses:
+        '200':
+          description: Successfully retrieve the session object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+              examples:
+                example:
+                  $ref: '#/components/examples/SessionSingle'
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidParameterSessionID'
+
+  '/device-configuration':
+    get:
+      tags:
+        - Device Configuration
+      operationId: get-deviceConfiguration
+      summary: Get device configuration data
+      description: Get the list of all device configurations matching the query parameters.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: The number of items to retrieve, this defaults to 100 if not specified.
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+            example: 25
+        - name: offset
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: |-
+            To paginate the results, use `offset` to skip the number of records that has already been consumed by prior API invocations. 
+            
+            For example, if there are 100 records and each invocation has `limit` value set to 10, an incrementing `offset` value by  10 would paginate to show all 100 records in 10 invocations. The first one with no offset, second invocation with 20, third with 30, and all the way to last one with offset value of 90.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: bulk_pack_file_name
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: Specify the name of the bulk pack file to retrieve the records stored in it.
+          schema:
+            type: string
+            example: 2023-04-03-21-02-36_80229004-3250-43e0-aa77-b23815df7042_f305c764724ed99f29030687cc4afb55.json
+      responses:
+        '200':
+          description: Successfully retrieve the list of device configurations matching the specified query parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  device_configurations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DeviceConfiguration'
+                  links:
+                    type: object
+                    properties:
+                      next:
+                        type: string
+                      prev:
+                        type: string
+                  query:
+                    description: Contains the total number of device configuration objects returned as result, and the pagination parameters. Also contains other query parameters, if they are specified.
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        minimum: 0
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+              examples:
+                example:
+                  $ref: '#/components/examples/DeviceConfigGet'
+        '422':
+          $ref: '#/components/responses/InvalidQueryParametersLimit'
+    post:
+      tags:
+        - Device Configuration
+      operationId: post-deviceConfiguration
+      summary: Create a new device configuration object
+      description: Create a new device configuration object. This endpoint is typically meant to be called by the Bulk Pack Transformer.
+      requestBody:
+        $ref: '#/components/requestBodies/DeviceConfigPostRequest'
+      responses:
+        '200':
+          description: Returns the device configuration object if it already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceConfiguration'
+              examples:
+                example:
+                  $ref: '#/components/examples/DeviceConfigSingle'
+        '201':
+          description: Successfully created the device configuration object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceConfiguration'
+              examples:
+                example:
+                  $ref: '#/components/examples/DeviceConfigSingle'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaTypeError'
+        '422':
+          $ref: '#/components/responses/InvalidRequestBodyID'
+  '/device-configuration/{device_configuration_id}':
+    get:
+      tags:
+        - Device Configuration
+      operationId: get-deviceConfiguration-deviceConfigurationId
+      summary: Get a single device configuration object
+      description: Get a single device configuration object matching the specified ID.
+      parameters:
+        - name: device_configuration_id
+          in: path
+          required: true
+          deprecated: false
+          description: The ID of the object.
+          schema:
+            type: string
+            format: uuid
+            example: beca4f73-a135-42c0-bd5b-6963ae46ae63
+      responses:
+        '200':
+          description: Successfully retrieve the device configuration object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceConfiguration'
+              examples:
+                example:
+                  $ref: '#/components/examples/DeviceConfigSingle'
+        '404':
+          $ref: '#/components/responses/DeviceConfigNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidParameterDeviceConfigID'
+
+  '/wallet-registration':
+    get:
+      tags:
+        - Wallet Registration
+      operationId: get-walletRegistration
+      summary: Get wallet registrations data
+      description: Get the list of all wallet registrations matching the query parameters.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: The number of items to retrieve, this defaults to 100 if not specified.
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+            example: 25
+        - name: offset
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: |-
+            To paginate the results, use `offset` to skip the number of records that has already been consumed by prior API invocations. 
+            
+            For example, if there are 100 records and each invocation has `limit` value set to 10, an incrementing `offset` value by  10 would paginate to show all 100 records in 10 invocations. The first one with no offset, second invocation with 20, third with 30, and all the way to last one with offset value of 90.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: bulk_pack_file_name
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: Specify the name of the bulk pack file to retrieve the records stored in it.
+          schema:
+            type: string
+            example: 2023-04-03-21-02-36_80229004-3250-43e0-aa77-b23815df7042_f305c764724ed99f29030687cc4afb55.json
+      responses:
+        '200':
+          description: Successfully retreive the wallet registration objects matching the query parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallet_registrations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WalletRegistration'
+                  links:
+                    type: object
+                    properties:
+                      next:
+                        type: string
+                      prev:
+                        type: string
+                  query:
+                    description: Contains the total number of wallet registration objects returned as result, and the pagination parameters. Also contains other query parameters, if they are specified.
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        minimum: 0
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+              examples:
+                example:
+                  $ref: '#/components/examples/WalletRegGet'
+        '422':
+          $ref: '#/components/responses/InvalidQueryParametersLimit'
+    post:
+      tags:
+        - Wallet Registration
+      operationId: post-walletRegistration
+      summary: Create a new wallet registration object
+      description: Create a new wallet registration object. This endpoint is typically meant to be called by the Bulk Pack Transformer.
+      requestBody:
+        $ref: '#/components/requestBodies/WalletRegPostRequest'
+      responses:
+        '200':
+          description: Returns the wallet registration object if it already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletRegistration'
+              examples:
+                example:
+                  $ref: '#/components/examples/WalletRegSingle'
+        '201':
+          description: Successfully created the wallet registration object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletRegistration'
+              examples:
+                example:
+                  $ref: '#/components/examples/WalletRegSingle'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaTypeError'
+        '422':
+          $ref: '#/components/responses/InvalidRequestBodyID'
+  '/wallet-registration/{wallet_registration_id}':
+    get:
+      tags:
+        - Wallet Registration
+      operationId: get-walletRegistration-walletRegistrationId
+      summary: Get a single wallet registration object
+      description: Get a single wallet registration object matching the specified ID.
+      parameters:
+        - name: wallet_registration_id
+          in: path
+          required: true
+          deprecated: false
+          description: The ID of the object.
+          schema:
+            type: string
+            format: uuid
+            example: beca4f73-a135-42c0-bd5b-6963ae46ae63
+      responses:
+        '200':
+          description: Successfully retrieve the wallet registration object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletRegistration'
+              examples:
+                example:
+                  $ref: '#/components/examples/WalletRegSingle'
+        '404':
+          $ref: '#/components/responses/WalletRegNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidParameterWalletRegID'
+
+  '/replay-events':
+    post:
+      tags:
+        - Events
+      operationId: post-replayEvents
+      summary: Replay domain events
+      description: Replay domain events in case there was any issue with its initial execution, such as not being published to the message broker queue, or not being handled correctly.
+      responses:
+        '200':
+          description: Replay request accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request:
+                    type: string
+                  status:
+                    type: string
+              examples:
+                example:
+                  $ref: '#/components/examples/ReplayEvents'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaTypeError'
+
+  '/track':
+    get:
+      tags:
+        - Track
+      operationId: get-track
+      summary: Get track data
+      description: Get the list of all tracks matching the query parameters.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: The number of items to retrieve, this defaults to 100 if not specified.
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+            example: 25
+        - name: offset
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: |-
+            To paginate the results, use `offset` to skip the number of records that has already been consumed by prior API invocations. 
+            
+            For example, if there are 100 records and each invocation has `limit` value set to 10, an incrementing `offset` value by  10 would paginate to show all 100 records in 10 invocations. The first one with no offset, second invocation with 20, third with 30, and all the way to last one with offset value of 90.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: bulk_pack_file_name
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          description: Specify the name of the bulk pack file to retrieve the records stored in it.
+          schema:
+            type: string
+            example: 2023-04-03-21-02-36_80229004-3250-43e0-aa77-b23815df7042_f305c764724ed99f29030687cc4afb55.json
+        - name: session_id
+          in: query
+          required: false
+          deprecated: false
+          allowEmptyValue: false
+          schema:
+            type: string
+            format: uuid
+            example: 123455af-0d7e-5027-b537-263729cca6e2
+      responses:
+        '200':
+          description: Successfully retreive the track objects matching the query parameters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Track'
+                  links:
+                    type: object
+                    properties:
+                      next:
+                        type: string
+                      prev:
+                        type: string
+                  query:
+                    description: Contains the total number of track objects returned as result, and the pagination parameters. Also contains other query parameters, if they are specified.
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        minimum: 0
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+              examples:
+                example:
+                  $ref: '#/components/examples/TrackGet'
+        '422':
+          $ref: '#/components/responses/InvalidQueryParametersLimit'
+    post:
+      tags:
+        - Track
+      operationId: post-track
+      summary: Create a new track object
+      description: Create a new track object. This endpoint is typically used by the Bulk Pack Transformer.
+      requestBody:
+        $ref: '#/components/requestBodies/TrackPostRequest'
+      responses:
+        '201':
+          description: Successfully create a new track object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+              examples:
+                example:
+                  $ref: '#/components/examples/TrackSingle'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaTypeError'
+        '422':
+          $ref: '#/components/responses/InvalidRequestBodySessionID'
+  '/track/{track_id}':
+    get:
+      tags:
+        - Track
+      operationId: get-track-trackId
+      summary: Get a single track object
+      description: Get the track object matching the ID.
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          deprecated: false
+          description: The ID of the object.
+          schema:
+            type: string
+            format: uuid
+            example: beca4f73-a135-42c0-bd5b-6963ae46ae63
+      responses:
+        '200':
+          description: Successfully retrieve the track object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+              examples:
+                example:
+                  $ref: '#/components/examples/TrackSingle'
+        '404':
+          $ref: '#/components/responses/TrackNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidParameterTrackID'
+components:
+  schemas:
+    errorResponse:
+      title: 'Error Response'
+      description: 'Error response'
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+    RawCapture:
+      title: Raw Capture
+      description: Represents the snapshot of a tree captured by a device with its associated data and metadata. It contains the photo of the tree, location, planter details.
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The identifier for the capture record. The ID is a valid UUID string.
+        reference_id:
+          type: string
+          minLength: 1
+          description: A backward compatible integer identifier used and owned as primary key by the legacy `trees` table in main treetracker db for its row. This is a temporary reference during the data migration process and can be removed when migration is complete.
+        session_id:
+          type: string
+          format: uuid
+        abs_step_count:
+          type: integer
+        delta_step_count:
+          type: integer
+        rotation_matrix:
+          type: array
+          items:
+            type: integer
+        image_url:
+          type: string
+          format: url
+          minLength: 1
+          description: The URL containing the tree image that represents the capture.
+        lat:
+          type: string
+          minLength: 1
+          description: The latitude location value of the tree capture.
+        lon:
+          type: string
+          minLength: 1
+          description: The longitude location value of the tree capture.
+        gps_accuracy:
+          type: integer
+          minimum: 0
+        note:
+          type: string
+        device_identifier:
+          type: string
+        grower_account_id:
+          type: string
+          format: uuid
+        wallet:
+          type: string
+        user_photo_url:
+          type: string
+          format: url
+        extra_attributes:
+          type: object
+          required:
+            - entries
+          properties:
+            entries:
+              type: array
+              uniqueItems: true
+              minItems: 1
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    minLength: 1
+                  value:
+                    type: string
+                required:
+                  - key
+                  - value
+        status:
+          $ref: '#/components/schemas/RawCaptureStatus'
+        rejection_reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        captured_at:
+          type: string
+          format: date-time
+        organization_id:
+          type: string
+      required:
+        - id
+        - image_url
+        - lat
+        - lon
+        - extra_attributes
+        - status
+        - created_at
+        - updated_at
+        - captured_at
+        - session_id
+        - abs_step_count
+        - delta_step_count
+        - rotation_matrix
+    RawCaptureCreated:
+      title: Raw Capture (created)
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The identifier for the capture record. The ID is a valid UUID string.
+        reference_id:
+          type: string
+          minLength: 1
+          description: A backward compatible integer identifier used and owned as primary key by the legacy `trees` table in main treetracker db for its row. This is a temporary reference during the data migration process and can be removed when migration is complete.
+        session_id:
+          type: string
+          format: uuid
+        abs_step_count:
+          type: integer
+        delta_step_count:
+          type: integer
+        rotation_matrix:
+          type: array
+          items:
+            type: integer
+        image_url:
+          type: string
+          format: url
+          minLength: 1
+          description: The URL containing the tree image that represents the capture.
+        lat:
+          type: string
+          minLength: 1
+          description: The latitude location value of the tree capture.
+        lon:
+          type: string
+          minLength: 1
+          description: The longitude location value of the tree capture.
+        gps_accuracy:
+          type: integer
+          minimum: 0
+        note:
+          type: string
+        extra_attributes:
+          type: object
+          required:
+            - entries
+          properties:
+            entries:
+              type: array
+              uniqueItems: true
+              minItems: 1
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    minLength: 1
+                  value:
+                    type: string
+                required:
+                  - key
+                  - value
+        status:
+          $ref: '#/components/schemas/RawCaptureStatus'
+        rejection_reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        captured_at:
+          type: string
+          format: date-time
+        bulk_pack_file_name:
+          type: string
+    RawCaptureStatus:
+      title: Raw Capture Status
+      type: string
+      enum:
+        - unprocessed
+        - approved
+        - rejected
+    Session:
+      title: Session
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        start_time:
+          type: string
+          format: date-time
+        bulk_pack_version:
+          type: string
+        device_configuration_id:
+          type: string
+          format: uuid
+        originating_wallet_registration_id:
+          type: string
+          format: uuid
+        target_wallet:
+          type: string
+        check_in_photo_url:
+          type: string
+          format: url
+        track_url:
+          type: string
+          format: url
+        organization:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        device_identifier:
+          type: string
+        grower_account_id:
+          type: string
+          format: uuid
+        wallet:
+          type: string
+        user_photo_url:
+          type: string
+          format: url
+        created_at:
+          type: string
+          format: date-time
+    SessionCreated:
+      title: Session (created)
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        start_time:
+          type: string
+          format: date-time
+        bulk_pack_version:
+          type: string
+        device_configuration_id:
+          type: string
+          format: uuid
+        originating_wallet_registration_id:
+          type: string
+          format: uuid
+        target_wallet:
+          type: string
+        check_in_photo_url:
+          type: string
+          format: url
+        track_url:
+          type: string
+          format: url
+        organization:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        bulk_pack_file_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    BulkPackVersion:
+      title: Bulk Pack Version
+      type: string
+      enum:
+        - v1
+        - v2
+    DeviceConfiguration:
+      title: Device Configuration
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        device_identifier:
+          type: string
+        brand:
+          type: string
+        model:
+          type: string
+        device:
+          type: string
+        serial:
+          type: string
+        hardware:
+          type: string
+        manufacturer:
+          type: string
+        app_build:
+          type: string
+        app_version:
+          type: string
+        os_version:
+          type: string
+        sdk_version:
+          type: string
+        bulk_pack_file_name:
+          type: string
+        logged_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    WalletRegistration:
+      title: Wallet Registration
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        wallet:
+          type: string
+        user_photo_url:
+          type: string
+          format: url
+        grower_account_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        lat:
+          type: number
+        lon:
+          type: number
+        registered_at:
+          type: string
+          format: date-time
+        bulk_pack_file_name:
+          type: string
+        v1_legacy_organization:
+          type: string
+    Track:
+      title: Track
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        locations_url:
+          type: string
+          format: url
+        created_at:
+          type: string
+          format: date-time
+        bulk_pack_file_name:
+          type: string
+  responses:
+    InvalidQueryParametersLimit:
+      description: 'Invalid query parameters.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 422
+            message: '"limit" must be a number'
+    InvalidParameterCaptureID:
+      description: 'Invalid path parameter.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 422
+            message: '"raw_capture_id" must be a valid GUID'
+    InvalidRequestBodyID:
+      description: 'Invalid request body parameters.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 422
+            message: '"id" must be a valid GUID'
+    InvalidCaptureSession:
+      description: 'Session is invalid or not yet created.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 409
+            message: 'A session resource with id, 295895af-0d7e-5027-b537-263729cca6e1 has yet to be created, kindly retry later'
+    RawCaptureNotFound:
+      description: 'Resource not found.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 404
+            message: 'raw capture with d128330a-e3b5-4934-bec6-4e92f862c922 not found'
+    UnsupportedMediaTypeError:
+      description: Invalid content type.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 415
+            message: 'Invalid content type. API only supports application/json'
+    SessionNotFound:
+      description: 'Resource not found.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 404
+            message: 'session with d128330a-e3b5-4934-bec6-4e92f862c922 not found'
+    InvalidParameterSessionID:
+      description: 'Invalid path parameter.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 422
+            message: '"session_id" must be a valid GUID'
+    InvalidParameterDeviceConfigID:
+      description: 'Invalid path parameter.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 422
+            message: '"device_configuration_id" must be a valid GUID'
+    DeviceConfigNotFound:
+      description: 'Resource not found.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 404
+            message: 'device configuration with 04db55a9-7970-4413-8ef1-e025b51c5ce1 not found'
+    WalletRegNotFound:
+      description: 'Resource not found.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 404
+            message: 'wallet registration with 295895af-0d7e-5027-b537-263729cca6e1 not found'
+    InvalidParameterWalletRegID:
+      description: 'Invalid path parameter.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 422
+            message: '"wallet_registration_id" must be a valid GUID'
+    InvalidRequestBodySessionID:
+      description: 'Invalid request body parameters.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 422
+            message: '"session_id" must be a valid GUID'
+    TrackNotFound:
+      description: 'Resource not found.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 404
+            message: 'Can not found track by id:d98f1da6-5c6d-4087-b067-e51090688ec1'
+    InvalidParameterTrackID:
+      description: 'Invalid path parameter.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            code: 422
+            message: '"track_id" must be a valid GUID'
+  examples:
+    RawCapturesGet:
+      value:
+        raw_captures:
+          - id: beca4f73-a135-42c0-bd5b-6963ae46ae63
+            reference_id: '1000405'
+            session_id: 5fcbfa1b-1eb6-5116-8dbc-ad2c854489a3
+            abs_step_count: -1
+            delta_step_count: 0
+            rotation_matrix:
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+            image_url: https://treetracker-dev-images.s3.eu-central-1.amazonaws.com/2022.01.09.23.36.48_0.0_0.0_08f832dd-080a-4e5e-be62-31b0328771a5_IMG_20220109_232830_2688215598134780956.jpg
+            lat: '37.84492259'
+            lon: '-122.2571481'
+            gps_accuracy:
+            note: My Note
+            device_identifier: '22330634247'
+            grower_account_id: c82cc807-8e35-418b-88ce-fda398cf4e89
+            wallet: '76022435059'
+            user_photo_url: https://treetracker-test-images.s3.eu-central-1.amazonaws.com/2021.05.05.17.30.58_37.84481550803357_-122.25722830534376_fe061d0c-7912-402c-a8b3-bc8cc677e229_IMG_20210127_152031_2061776106836885603.jpg
+            extra_attributes:
+            status: unprocessed
+            rejection_reason:
+            created_at: '2023-05-30T08:45:02.475Z'
+            updated_at: '2023-05-30T08:45:02.475Z'
+            captured_at: '2023-05-30T07:42:38.000Z'
+            organization_id:
+          - id: f6d7b3d2-41c9-4772-8a33-8965cce90aef
+            reference_id: '1000114'
+            session_id: 24049762-c4a4-518b-b525-753d74cddef1
+            abs_step_count: 0
+            delta_step_count: 0
+            rotation_matrix: []
+            image_url: https://treetracker-dev-images.s3.eu-central-1.amazonaws.com/2023.04.03.21.02.34_0.0_0.0_2a28bd8f-c3d2-4565-a965-2752708313ca_IMG_20230403_210137_972819536098638956.jpg
+            lat: '0'
+            lon: '0'
+            gps_accuracy: '0'
+            note: My Legacy Note
+            device_identifier: 48b123d175ceeb4c
+            grower_account_id: c82cc807-8e35-418b-88ce-fda398cf4e89
+            wallet: "@TestUser2"
+            user_photo_url: https://treetracker-dev-images.s3.eu-central-1.amazonaws.com/2022.12.10.18.41.12_40.712775_-74.00597166666667_dd87525d-c0f9-4a88-baba-d51d2cd99bb6_IMG_20221210_182608_4138296658486075972.jpg
+            extra_attributes:
+            status: unprocessed
+            rejection_reason:
+            created_at: '2023-04-04T02:50:12.951Z'
+            updated_at: '2023-04-04T02:50:12.951Z'
+            captured_at: '2023-04-04T01:01:36.000Z'
+            organization_id:
+        links:
+          next: raw-captures?limit=2&offset=4
+          prev: raw-captures?limit=2&offset=0
+        query:
+          count: 48
+          limit: 2
+          offset: 2
+    RawCaptureSingle:
+      value:
+        id: beca4f73-a135-42c0-bd5b-6963ae46ae63
+        reference_id: '1000405'
+        session_id: 5fcbfa1b-1eb6-5116-8dbc-ad2c854489a3
+        abs_step_count: -1
+        delta_step_count: 0
+        rotation_matrix:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+        image_url: https://treetracker-dev-images.s3.eu-central-1.amazonaws.com/2022.01.09.23.36.48_0.0_0.0_08f832dd-080a-4e5e-be62-31b0328771a5_IMG_20220109_232830_2688215598134780956.jpg
+        lat: '37.84492259'
+        lon: '-122.2571481'
+        gps_accuracy:
+        note: My Note
+        device_identifier: '22330634247'
+        grower_account_id: c82cc807-8e35-418b-88ce-fda398cf4e89
+        wallet: '76022435059'
+        user_photo_url: https://treetracker-test-images.s3.eu-central-1.amazonaws.com/2021.05.05.17.30.58_37.84481550803357_-122.25722830534376_fe061d0c-7912-402c-a8b3-bc8cc677e229_IMG_20210127_152031_2061776106836885603.jpg
+        extra_attributes:
+        status: unprocessed
+        rejection_reason:
+        created_at: '2023-05-30T08:45:02.475Z'
+        updated_at: '2023-05-30T08:45:02.475Z'
+        captured_at: '2023-05-30T07:42:38.000Z'
+        organization_id:
+    RawCapturePostRequestExample:
+      value:
+        id: d128330a-e3b5-4934-bec6-4e92f862c92a
+        session_id: 295895af-0d7e-5027-b537-263729cca6e2
+        image_url: https://example.com/image1234.jpg
+        captured_at: '2023-08-12T07:49:00.000Z'
+        lat: '-5.904397792182863'
+        lon: '35.28007568791509'
+        gps_accuracy: 5
+        note: Test Note for raw capture
+        extra_attributes: null
+        abs_step_count: -1
+        delta_step_count: 0
+        rotation_matrix:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+        bulk_pack_file_name: 1685444247-testing-tool-trees.json
+    RawCaptureCreatedExample:
+      value:
+        id: d128330a-e3b5-4934-bec6-4e92f862c92a
+        reference_id: '1088472'
+        image_url: https://example.com/image1234.jpg
+        lat: '-5.904397792182863'
+        lon: '35.28007568791509'
+        gps_accuracy: '5'
+        note: Test Note for raw capture
+        extra_attributes: null
+        status: unprocessed
+        rejection_reason: null
+        created_at: '2023-11-19T18:46:17.238Z'
+        updated_at: '2023-11-19T18:46:17.238Z'
+        captured_at: '2023-08-12T07:49:00.000Z'
+        session_id: 295895af-0d7e-5027-b537-263729cca6e2
+        abs_step_count: -1
+        delta_step_count: 0
+        rotation_matrix:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+        bulk_pack_file_name: 1685444247-testing-tool-trees.json
+    RawCaptureRejected:
+      value:
+        id: beca4f73-a135-42c0-bd5b-6963ae46ae63
+        reference_id: '1000405'
+        session_id: 5fcbfa1b-1eb6-5116-8dbc-ad2c854489a3
+        abs_step_count: -1
+        delta_step_count: 0
+        rotation_matrix:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+        image_url: https://treetracker-dev-images.s3.eu-central-1.amazonaws.com/2022.01.09.23.36.48_0.0_0.0_08f832dd-080a-4e5e-be62-31b0328771a5_IMG_20220109_232830_2688215598134780956.jpg
+        lat: '37.84492259'
+        lon: '-122.2571481'
+        gps_accuracy:
+        note: My Note
+        device_identifier: '22330634247'
+        grower_account_id: c82cc807-8e35-418b-88ce-fda398cf4e89
+        wallet: '76022435059'
+        user_photo_url: https://treetracker-test-images.s3.eu-central-1.amazonaws.com/2021.05.05.17.30.58_37.84481550803357_-122.25722830534376_fe061d0c-7912-402c-a8b3-bc8cc677e229_IMG_20210127_152031_2061776106836885603.jpg
+        extra_attributes:
+        status: rejected
+        rejection_reason: Not a tree
+        created_at: '2023-05-30T08:45:02.475Z'
+        updated_at: '2023-05-30T08:45:02.475Z'
+        captured_at: '2023-05-30T07:42:38.000Z'
+        organization_id:
+    RawCapturePatchRequestExample:
+      value:
+        rejection_reason: Not a tree
+        organization_id: 1234
+    SessionGet:
+      value:
+        sessions:
+          - id: 7dd80a63-720b-4f50-9dda-090eb22f5c5c
+            start_time: null
+            bulk_pack_version: null
+            device_configuration_id: 90c1560b-c399-4f2a-b258-defd70a214e4
+            originating_wallet_registration_id: e0ae2495-5d84-493b-849f-66a9c203b147
+            target_wallet: null
+            check_in_photo_url: null
+            track_url: null
+            organization: null
+            organization_id: null
+            device_identifier: 9p#87Ng5nhQbXHtqGCa7
+            grower_account_id: 0526bf4b-4d4c-431a-9314-30b2692ea41f
+            wallet: wallet8@test
+            user_photo_url: http://dummyimage.com/248x100.png/cc0000/ffffff
+            created_at: '2022-11-11T01:32:37.151Z'
+          - id: a7165b92-26af-4cd2-b875-107d31a44483
+            start_time: null
+            bulk_pack_version: null
+            device_configuration_id: 0a8ea511-f2ab-428d-a803-ff9c2160592d
+            originating_wallet_registration_id: b6ea4e47-ae98-4087-a731-efdb24b92dd9
+            target_wallet: null
+            check_in_photo_url: null
+            track_url: null
+            organization: null
+            organization_id: null
+            device_identifier: '#Ea8J5bKO*kw38'
+            grower_account_id: cc6f2fe8-9aee-4b03-ace6-21006f028e60
+            wallet: handle1@test
+            user_photo_url: http://dummyimage.com/184x100.png/ff4444/ffffff
+            created_at: '2022-11-11T01:32:37.151Z'
+        links:
+          next: session?limit=2&offset=4
+          prev: session?limit=2&offset=0
+        query:
+          count: 235
+          limit: 2
+          offset: 2
+    SessionPostRequestExample:
+      value:
+        id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        device_configuration_id: 8d43031d-0d17-4895-83a5-d69db4fb6b33
+        originating_wallet_registration_id: c7a6b251-de19-407d-aaad-f7e054f7e6d7
+        target_wallet: testwallet66
+        check_in_photo_url: https://example.com/image1.jpg
+        track_url: https://example.com/track
+        organization: FCC
+        start_time: '2023-11-20T03:44:10.437Z'
+        bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
+        bulk_pack_version: v1
+    SessionCreatedExample:
+      value:
+        id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        start_time: '2023-11-20T03:44:10.437Z'
+        bulk_pack_version: v1
+        device_configuration_id: 8d43031d-0d17-4895-83a5-d69db4fb6b33
+        originating_wallet_registration_id: c7a6b251-de19-407d-aaad-f7e054f7e6d7
+        target_wallet: testwallet66
+        check_in_photo_url: https://example.com/image1.jpg
+        track_url: https://example.com/track
+        organization: FCC
+        organization_id: null
+        bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
+        created_at: '2023-11-20T03:55:27.711Z'
+    SessionSingle:
+      value:
+        id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        start_time: '2023-11-20T03:44:10.437Z'
+        bulk_pack_version: v1
+        device_configuration_id: 8d43031d-0d17-4895-83a5-d69db4fb6b33
+        originating_wallet_registration_id: c7a6b251-de19-407d-aaad-f7e054f7e6d7
+        target_wallet: testwallet66
+        check_in_photo_url: https://example.com/image1.jpg
+        track_url: https://example.com/track
+        organization: FCC
+        organization_id: null
+        device_identifier: 48b123d175ceeb4c
+        grower_account_id: c82cc807-8e35-418b-88ce-fda398cf4e89
+        wallet: '1231231231'
+        user_photo_url: https://treetracker-dev-images.s3.eu-central-1.amazonaws.com/2023.01.20.21.16.38_40.712775_-74.00597166666667_3a5b1f20-3788-479e-82fe-dd44e521dd08_IMG_20230118_204329_6120127220686177340.jpg
+        created_at: '2023-11-20T03:55:27.711Z'
+    DeviceConfigGet:
+      value:
+        device_configurations:
+          - id: 04db55a9-7970-4413-8ef1-e025b51c5ce4
+            device_identifier: 427ad3e142b52525
+            brand: google
+            model: Pixel 7
+            device: panther
+            serial: unknown
+            hardware: panther
+            manufacturer: Google
+            app_build: '191'
+            app_version: 2.1.1
+            os_version: '13'
+            sdk_version: '33'
+            bulk_pack_file_name: 2022-12-10-23-43-35_7e69f0df-3fac-4141-9c69-e3f844d5326d_a8e29677573f3857d7d46b0058036214_deviceConfigs.json
+            logged_at: '2022-12-11T04:42:25.891Z'
+            created_at: '2022-12-11T04:45:01.819Z'
+          - id: c469aff6-2951-53a5-b770-2b663038f636
+            device_identifier: f4237b41b15343b2
+            brand: Verizon
+            model: SM-J320V
+            device: j3ltevzw
+            serial: b821cc59
+            hardware: qcom
+            manufacturer: samsung
+            app_build: '45'
+            app_version: 1.2.3
+            os_version: 7.1.1
+            sdk_version: '25'
+            bulk_pack_file_name: null
+            logged_at: '2022-12-17T08:56:21.935Z'
+            created_at: '2019-07-12T19:45:25.565Z'
+        links:
+          next: device-configuration?limit=2&offset=4
+          prev: device-configuration?limit=2&offset=0
+        query:
+          count: 529
+          limit: 2
+          offset: 2
+    DeviceConfigPostRequestExample:
+      value:
+        id: 12db55a9-7970-4413-8ef1-e025b51c5c12
+        device_identifier: 427ad3e142b52525
+        brand: google
+        model: Pixel 7
+        device: panther
+        serial: unknown
+        hardware: panther
+        manufacturer: Google
+        app_build: '191'
+        app_version: 2.1.1
+        os_version: '13'
+        sdk_version: '33'
+        bulk_pack_file_name: 2022-12-10-23-43-35_7e69f0df-3fac-4141-9c69-e3f844d5326d_a8e29677573f3857d7d46b0058036214_deviceConfigs.json
+        logged_at: '2022-12-11T04:42:25.891Z'
+        created_at: '2022-12-11T04:45:01.819Z'
+    DeviceConfigSingle:
+      value:
+        id: 12db55a9-7970-4413-8ef1-e025b51c5c12
+        device_identifier: 427ad3e142b52525
+        brand: google
+        model: Pixel 7
+        device: panther
+        serial: unknown
+        hardware: panther
+        manufacturer: Google
+        app_build: '191'
+        app_version: 2.1.1
+        os_version: '13'
+        sdk_version: '33'
+        bulk_pack_file_name: 2022-12-10-23-43-35_7e69f0df-3fac-4141-9c69-e3f844d5326d_a8e29677573f3857d7d46b0058036214_deviceConfigs.json
+        logged_at: '2022-12-11T04:42:25.891Z'
+        created_at: '2023-11-20T05:01:05.924Z'
+    WalletRegGet:
+      value:
+        wallet_registrations:
+          - id: 295895af-0d7e-5027-b537-263729cca6e2
+            wallet: '0783162606'
+            user_photo_url: https://treetracker-production-images.s3.eu-central-1.amazonaws.com/2023.07.24.18.04.06_0.0_0.0_cab48650-9596-47db-9bc3-7470ceefe58f_IMG_20230723_214532_1788143794432768080.jpg
+            grower_account_id: 7e23ba8b-bd80-4952-8adc-a225268af740
+            first_name: Tumaini
+            last_name: Taigo
+            phone: '0783162606'
+            email: null
+            lat: '0'
+            lon: '0'
+            registered_at: '2023-10-19T00:03:43.098Z'
+            bulk_pack_file_name: null
+            v1_legacy_organization: null
+          - id: 4d797696-d736-56ba-ad4c-2498c593eebb
+            wallet: '0769474822'
+            user_photo_url: https://treetracker-production-images.s3.eu-central-1.amazonaws.com/2023.07.26.17.01.42_-4.903125478886068_35.78215504065156_fc682e0a-5ebe-417a-b712-81b424930853_IMG_20230726_081849_4463659781316971554.jpg
+            grower_account_id: 0695232f-65ee-46bc-b5af-cc08219fb952
+            first_name: Happy
+            last_name: Mkalawa
+            phone: '0769474822'
+            email: null
+            lat: '0'
+            lon: '0'
+            registered_at: '2023-10-19T00:03:46.023Z'
+            bulk_pack_file_name: null
+            v1_legacy_organization: null
+        links:
+          next: wallet-registration?limit=2&offset=4
+          prev: wallet-registration?limit=2&offset=0
+        query:
+          count: 1692
+          limit: 2
+          offset: 2
+    WalletRegPostRequestExample:
+      value:
+        id: 123455af-0d7e-5027-b537-263729cca6e2
+        wallet: '0783162606'
+        user_photo_url: https://treetracker-production-images.s3.eu-central-1.amazonaws.com/2023.07.24.18.04.06_0.0_0.0_cab48650-9596-47db-9bc3-7470ceefe58f_IMG_20230723_214532_1788143794432768080.jpg
+        grower_account_id: 7e23ba8b-bd80-4952-8adc-a225268af740
+        first_name: Mosto
+        last_name: Muscular
+        phone: '0783162606'
+        email: null
+        lat: '0'
+        lon: '0'
+        registered_at: '2023-10-19T00:03:43.098Z'
+        bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
+        v1_legacy_organization: null
+    WalletRegSingle:
+      value:
+        id: 123455af-0d7e-5027-b537-263729cca6e2
+        wallet: '0783162606'
+        user_photo_url: https://treetracker-production-images.s3.eu-central-1.amazonaws.com/2023.07.24.18.04.06_0.0_0.0_cab48650-9596-47db-9bc3-7470ceefe58f_IMG_20230723_214532_1788143794432768080.jpg
+        grower_account_id: 7e23ba8b-bd80-4952-8adc-a225268af740
+        first_name: Mosto
+        last_name: Muscular
+        phone: '0783162606'
+        email: null
+        lat: '0'
+        lon: '0'
+        registered_at: '2023-10-19T00:03:43.098Z'
+        bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
+        v1_legacy_organization: null
+    ReplayEvents:
+      value:
+        request: accepted
+        status: replay in progress...
+    TrackGet:
+      value:
+        tracks:
+          - id: 98f01ba7-5c3f-4f7c-a1d7-73a63e899502
+            locations_url: https://example.com/urls3
+            bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
+            session_id: 407abd81-7c2b-483c-8684-c513af2309fd
+            created_at: '2023-01-21T02:53:29.815Z'
+          - id: 98f01ba7-5c3f-4f7c-a1d7-73a63e899505
+            locations_url: https://example.com/urls5
+            bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
+            session_id: 6702c337-c813-4437-9b58-a8d34fb99630
+            created_at: '2023-01-21T02:53:29.815Z'
+        links:
+          next: track?limit=2&offset=4
+          prev: track?limit=2&offset=0
+        query:
+          count: 5
+          limit: 2
+          offset: 2
+    TrackPostRequestExample:
+      value:
+        session_id: 36adf2c3-1d41-49d2-8285-9e9d823a2bde
+        locations_url: https://example.com/urlstest
+        bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
+    TrackSingle:
+      value:
+        id: 2e483241-6bc0-4653-96c0-ffdc20781cb8
+        session_id: 36adf2c3-1d41-49d2-8285-9e9d823a2bde
+        locations_url: https://example.com/urlstest
+        bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
+        created_at: '2023-11-20T06:38:28.421Z'
+  requestBodies:
+    RawCapturePostRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              session_id:
+                type: string
+                format: uuid
+              lat:
+                type: number
+              lon:
+                type: number
+              image_url:
+                type: string
+                format: url
+              gps_accuracy:
+                type: integer
+                minimum: 0
+              abs_step_count:
+                type: integer
+              delta_step_count:
+                type: integer
+              rotation_matrix:
+                type: array
+                items:
+                  type: integer
+              note:
+                type: string
+              extra_attributes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    value:
+                      type: string
+                  required:
+                    - key
+                    - value
+              captured_at:
+                type: string
+                format: date-time
+              bulk_pack_file_name:
+                type: string
+            required:
+              - id
+              - session_id
+              - lat
+              - lon
+              - image_url
+              - captured_at
+          examples:
+            example:
+              $ref: '#/components/examples/RawCapturePostRequestExample'
+    RawCapturePatchRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              rejection_reason:
+                type: string
+              organization_id:
+                type: integer
+            required:
+              - rejection_reason
+          examples:
+            example:
+              $ref: '#/components/examples/RawCapturePatchRequestExample'
+    SessionPostRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              device_configuration_id:
+                type: string
+                format: uuid
+              originating_wallet_registration_id:
+                type: string
+                format: uuid
+              target_wallet:
+                type: string
+              check_in_photo_url:
+                type: string
+                format: url
+              track_url:
+                type: string
+                format: url
+              organization:
+                type: string
+              start_time:
+                type: string
+                format: date-time
+              bulk_pack_file_name:
+                type: string
+              bulk_pack_version:
+                $ref: '#/components/schemas/BulkPackVersion'
+            required:
+              - id
+              - device_configuration_id
+              - originating_wallet_registration_id
+          examples:
+            example:
+              $ref: '#/components/examples/SessionPostRequestExample'
+    DeviceConfigPostRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              device_identifier:
+                type: string
+              brand:
+                type: string
+              model:
+                type: string
+              device:
+                type: string
+              serial:
+                type: string
+              hardware:
+                type: string
+              manufacturer:
+                type: string
+              app_build:
+                type: string
+              app_version:
+                type: string
+              os_version:
+                type: string
+              sdk_version:
+                type: string
+              logged_at:
+                type: string
+                format: date-time
+              bulk_pack_file_name:
+                type: string
+            required:
+              - id
+              - device_identifier
+              - brand
+              - model
+              - device
+              - serial
+              - hardware
+              - manufacturer
+              - app_build
+              - app_version
+              - os_version
+              - sdk_version
+              - logged_at
+          examples:
+            example:
+              $ref: '#/components/examples/DeviceConfigPostRequestExample'
+    WalletRegPostRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              wallet:
+                type: string
+              user_photo_url:
+                type: string
+              grower_account_id:
+                type: string
+                format: uuid
+              first_name:
+                type: string
+              last_name:
+                type: string
+              phone:
+                type: string
+              email:
+                type: string
+              lat:
+                type: integer
+              lon:
+                type: integer
+              registered_at:
+                type: string
+                format: uuid
+              v1_legacy_organization:
+                type: string
+            required:
+              - id
+              - wallet
+              - user_photo_url
+              - grower_account_id
+              - first_name
+              - last_name
+              - lat
+              - lon
+          examples:
+            example:
+              $ref: '#/components/examples/WalletRegPostRequestExample'
+    TrackPostRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              locations_url:
+                type: string
+                format: url
+              session_id:
+                type: string
+                format: uuid
+              bulk_pack_file_name:
+                type: string
+            required:
+              - locations_url
+              - session_id
+              - bulk_pack_file_name
+          examples:
+            example:
+              $ref: '#/components/examples/TrackPostRequestExample'
+security: []
+tags: []
