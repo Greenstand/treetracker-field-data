@@ -1,3 +1,17 @@
+# [1.13.0](https://github.com/Greenstand/treetracker-field-data/compare/v1.12.0...v1.13.0) (2023-12-29)
+
+
+### Bug Fixes
+
+* revert changes ([ce97667](https://github.com/Greenstand/treetracker-field-data/commit/ce97667b11c3f0f867823e09c0e4dd43a11c7fb4))
+
+
+### Features
+
+* add session endpoint and query handling ([356ff62](https://github.com/Greenstand/treetracker-field-data/commit/356ff62ec4c8efe42610fa71c3bc2e543a311062))
+* allow updating raw-capture status to approved/rejected ([48d4751](https://github.com/Greenstand/treetracker-field-data/commit/48d4751f3bc1ec63ff4a85e827f2531a0bc0813b))
+* api spec update ([3d95baa](https://github.com/Greenstand/treetracker-field-data/commit/3d95baaf65ea22511af16aa4cfe98f97c96a20f1))
+
 # [1.12.0](https://github.com/Greenstand/treetracker-field-data/compare/v1.11.9...v1.12.0) (2023-11-07)
 
 
