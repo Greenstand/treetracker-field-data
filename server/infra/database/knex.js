@@ -2,8 +2,8 @@ const knex = require('knex');
 const knexLegacyDB = require('knex');
 const log = require('loglevel');
 const connection = require('../../../config/config').connectionString;
-const connectionLegacyDB = require('../../../config/config')
-  .connectionStringLegacyDB;
+const connectionLegacyDB =
+  require('../../../config/config').connectionStringLegacyDB;
 
 const postgresPattern = /^postgresql:\//;
 
