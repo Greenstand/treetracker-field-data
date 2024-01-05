@@ -1,3 +1,11 @@
+## [1.13.1](https://github.com/Greenstand/treetracker-field-data/compare/v1.13.0...v1.13.1) (2024-01-05)
+
+
+### Bug Fixes
+
+* create partitions ([37bb6a9](https://github.com/Greenstand/treetracker-field-data/commit/37bb6a915e453b45d65063771fc028cba6665da1))
+* update default port ([a4a4d82](https://github.com/Greenstand/treetracker-field-data/commit/a4a4d8293ec7d04d3264d97d9443d304f6f78bc2))
+
 # [1.13.0](https://github.com/Greenstand/treetracker-field-data/compare/v1.12.0...v1.13.0) (2023-12-29)
 
 
