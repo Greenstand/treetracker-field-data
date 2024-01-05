@@ -1,3 +1,10 @@
+## [1.13.3](https://github.com/Greenstand/treetracker-field-data/compare/v1.13.2...v1.13.3) (2024-01-05)
+
+
+### Bug Fixes
+
+* update track default ([a730379](https://github.com/Greenstand/treetracker-field-data/commit/a73037935fb579b9aa5d81311bcbdaca565daacb))
+
 ## [1.13.2](https://github.com/Greenstand/treetracker-field-data/compare/v1.13.1...v1.13.2) (2024-01-05)
 
 
