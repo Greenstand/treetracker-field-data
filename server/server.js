@@ -5,7 +5,7 @@ const log = require('loglevel');
 require('./setup');
 const app = require('./app');
 
-const port = process.env.NODE_PORT || 3007;
+const port = process.env.NODE_PORT || 3006;
 const { knex, knexLegacyDB } = require('./infra/database/knex');
 
 const server = app.listen(port, () => {
