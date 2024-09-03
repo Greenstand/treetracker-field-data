@@ -12,7 +12,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    container: node:10.18-jessie
+    container: node:20.16.0-alpine3.20
 
     services:
       # Label used to access the service container
@@ -36,7 +36,7 @@ jobs:
           RABBITMQ_DEFAULT_PASS: rabbitmq
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
       - name: Use Node.js 16.x
         uses: actions/setup-node@v1
         with:
@@ -76,7 +76,7 @@ jobs:
       github.event_name == 'push' &&
       github.repository_owner == 'Greenstand'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
       - name: Use Node.js 18.x
         uses: actions/setup-node@v1
