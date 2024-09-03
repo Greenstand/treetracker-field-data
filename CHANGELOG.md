@@ -1,3 +1,19 @@
+# [1.14.0](https://github.com/Greenstand/treetracker-field-data/compare/v1.13.3...v1.14.0) (2024-09-03)
+
+
+### Bug Fixes
+
+* semantic release ([e53acfe](https://github.com/Greenstand/treetracker-field-data/commit/e53acfef10140c0040a94dd9e8a29d730b76df69))
+* update github actions checkout version ([1f864f5](https://github.com/Greenstand/treetracker-field-data/commit/1f864f5c3c2324c98d95d47c7a0c6526909a1e8c))
+* update github actions node version ([df88275](https://github.com/Greenstand/treetracker-field-data/commit/df882756988c74ddb91368cd84a82a8e211ba7c0))
+* update github actions node version ([0a5173e](https://github.com/Greenstand/treetracker-field-data/commit/0a5173e0141439765edc64c3eeb236c6a48b7edb))
+* update github actions node version ([029ebca](https://github.com/Greenstand/treetracker-field-data/commit/029ebca4a8861eb4324168c773522464d6609d92))
+
+
+### Features
+
+* add session segment tables ([30cb7ea](https://github.com/Greenstand/treetracker-field-data/commit/30cb7ea1a5fb7f0b433854bb5477c3ba4c0fc55b))
+
 ## [1.13.3](https://github.com/Greenstand/treetracker-field-data/compare/v1.13.2...v1.13.3) (2024-01-05)
 
 
