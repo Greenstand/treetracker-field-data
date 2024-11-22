@@ -1,0 +1,4 @@
+ALTER TABLE session_segment
+    ALTER COLUMN starts_at DROP DEFAULT,
+    ALTER COLUMN ends_at DROP DEFAULT,
+    ALTER COLUMN processed_at DROP DEFAULT;
