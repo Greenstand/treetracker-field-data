@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/Greenstand/treetracker-field-data/compare/v1.14.0...v1.14.1) (2024-11-22)
+
+
+### Bug Fixes
+
+* update session and session_segment tables ([5fb45fc](https://github.com/Greenstand/treetracker-field-data/commit/5fb45fce089d760b89804542b35f05abdfa51092))
+
 # [1.14.0](https://github.com/Greenstand/treetracker-field-data/compare/v1.13.3...v1.14.0) (2024-09-03)
 
 
