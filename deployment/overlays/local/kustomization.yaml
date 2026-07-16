@@ -32,11 +32,7 @@ patches:
       apiVersion: bitnami.com/v1alpha1
       kind: SealedSecret
       metadata: { name: database-migration-connection, namespace: field-data-api }
-  - patch: |-
-      $patch: delete
-      apiVersion: getambassador.io/v2
-      kind: Mapping
-      metadata: { name: treetracker-field-data }
+  # Ambassador Mapping KEPT (Emissary routes /field-data/ → this service, rewrite /).
   - patch: |-
       $patch: delete
       apiVersion: batch/v1
