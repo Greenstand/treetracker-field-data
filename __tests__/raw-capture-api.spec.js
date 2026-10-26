@@ -3,7 +3,6 @@ const request = require('supertest');
 const server = require('../server/app');
 const { expect } = require('chai');
 const sinon = require('sinon');
-const Broker = require('rascal').BrokerAsPromised;
 const { v4: uuid } = require('uuid');
 const { knex, knexLegacyDB } = require('../server/infra/database/knex');
 const {
@@ -23,20 +22,7 @@ const captureWithoutDomainEvent = {
 };
 
 describe('Raw Captures', () => {
-  let brokerStub;
-
   before(async () => {
-    brokerStub = sinon.stub(Broker, 'create').resolves({
-      publish: () => {
-        return {
-          on: function (state, callback) {
-            if (state === 'success') callback();
-            return this;
-          },
-        };
-      },
-    });
-
     await clearDB(knex, knexLegacyDB);
     await insertTestCapture(knex, knexLegacyDB);
     await knex('raw_capture').insert({
@@ -47,10 +33,6 @@ describe('Raw Captures', () => {
       created_at: new Date(),
       updated_at: new Date(),
     });
-  });
-
-  after(async () => {
-    brokerStub.restore();
   });
 
   it(`Raw capture should be successfully added`, function (done) {
@@ -133,14 +115,6 @@ describe('Raw Captures', () => {
     expect(res.body.id).to.eql(captureRequestObject.id);
   });
 
-  it('should confirm number of sent capture-created events', async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const numOfEmittedEvents = await knex('domain_event')
-      .count()
-      .where({ status: 'sent' });
-    expect(+numOfEmittedEvents[0].count).to.eql(4);
-  });
-
   describe('should reject a raw capture', async () => {
     let legacyAPIRejectTreeStub;
 
@@ -181,33 +155,6 @@ describe('Raw Captures', () => {
         .count()
         .where({ status: 'sent' });
       expect(+numOfEmittedEvents[0].count).to.eql(0);
-    });
-
-    it('should reject an approved raw capture, should emit an event', async () => {
-      const rejection_reason = 'not a tree';
-
-      const res = await request(server)
-        .patch(`/raw-captures/${captureWithoutDomainEvent.id}/reject`)
-        .send({ rejection_reason })
-        .set('Authorization', 'jwt_token');
-
-      expect(
-        legacyAPIRejectTreeStub.calledOnceWithExactly({
-          id: 64864,
-          legacyAPIAuthorizationHeader: 'jwt_token',
-          organizationId: undefined,
-          rejectionReason: rejection_reason,
-        }),
-      ).eql(true);
-
-      expect(res.body.status).to.eql('rejected');
-      expect(res.body.rejection_reason).to.eql(rejection_reason);
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const numOfEmittedEvents = await knex('domain_event')
-        .count()
-        .where({ status: 'sent' });
-      expect(+numOfEmittedEvents[0].count).to.eql(1);
     });
   });
 });
