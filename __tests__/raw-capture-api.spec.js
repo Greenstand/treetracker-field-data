@@ -16,7 +16,7 @@ const LegacyAPI = require('../server/services/LegacyAPIService');
 
 let reference_id;
 
-const captureWithoutDomainEvent = {
+const approvedCapture = {
   ...captureRequestObject,
   id: uuid(),
 };
@@ -26,8 +26,8 @@ describe('Raw Captures', () => {
     await clearDB(knex, knexLegacyDB);
     await insertTestCapture(knex, knexLegacyDB);
     await knex('raw_capture').insert({
-      ...captureWithoutDomainEvent,
-      extra_attributes: { entries: captureWithoutDomainEvent.extra_attributes },
+      ...approvedCapture,
+      extra_attributes: { entries: approvedCapture.extra_attributes },
       reference_id: 64864,
       status: 'approved',
       created_at: new Date(),
@@ -62,14 +62,14 @@ describe('Raw Captures', () => {
       });
   });
 
-  it(`Should handle existing raw capture without existing domain event`, function (done) {
+  it(`Should handle an existing raw capture`, function (done) {
     request(server)
       .post(`/raw-captures`)
-      .send({ ...captureWithoutDomainEvent })
+      .send({ ...approvedCapture })
       .set('Accept', 'application/json')
       .expect(200)
       .end(function (err, res) {
-        expect(res.body.id).to.eql(captureWithoutDomainEvent.id);
+        expect(res.body.id).to.eql(approvedCapture.id);
         if (err) return done(err);
         return done();
       });
@@ -88,7 +88,7 @@ describe('Raw Captures', () => {
       });
   });
 
-  it('should resend capture created event if it wasnt successful last time and capture already exists', async () => {
+  it('should accept a repeated post for a capture that already exists', async () => {
     const res = await request(server)
       .post(`/raw-captures`)
       .send({ ...captureRequestObject, id: capture.id })
@@ -123,14 +123,13 @@ describe('Raw Captures', () => {
         .stub(LegacyAPI, 'rejectLegacyTree')
         .resolves();
 
-      await knex('domain_event').del();
     });
 
     afterEach(() => {
       legacyAPIRejectTreeStub.restore();
     });
 
-    it('should reject an unprocessed raw capture, should not emit an event', async () => {
+    it('should reject an unprocessed raw capture', async () => {
       const rejection_reason = 'invalid photograph';
 
       const res = await request(server)
@@ -150,11 +149,6 @@ describe('Raw Captures', () => {
       expect(res.body.status).to.eql('rejected');
       expect(res.body.rejection_reason).to.eql(rejection_reason);
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const numOfEmittedEvents = await knex('domain_event')
-        .count()
-        .where({ status: 'sent' });
-      expect(+numOfEmittedEvents[0].count).to.eql(0);
     });
   });
 });

@@ -1,6 +1,4 @@
 const RawCaptureRepository = require('../repositories/RawCaptureRepository');
-const { DomainEventTypes } = require('../utils/enums');
-const DomainEvent = require('./DomainEvent');
 
 class RawCapture {
   constructor(session) {
@@ -60,31 +58,6 @@ class RawCapture {
     });
   }
 
-  static RawCaptureCreated({
-    id,
-    reference_id,
-    lat,
-    lon,
-    field_user_id,
-    field_username,
-    extra_attributes,
-    created_at,
-    captured_at,
-  }) {
-    return Object.freeze({
-      id,
-      type: DomainEventTypes.RawCaptureCreated,
-      reference_id,
-      lat,
-      lon,
-      field_user_id,
-      field_username,
-      extra_attributes,
-      created_at,
-      captured_at,
-    });
-  }
-
   _response(rawCapture) {
     return this.constructor.RawCapture(rawCapture);
   }
@@ -109,31 +82,10 @@ class RawCapture {
   }
 
   async createRawCapture(rawCaptureObject) {
-    const domainEventModel = new DomainEvent(this._session);
-
     const existingRawCapture = await this.getRawCaptureById(
       rawCaptureObject.id,
     );
     if (existingRawCapture?.id) {
-      let domainEvent = await domainEventModel.getDomainEventByPayloadIdAndType(
-        rawCaptureObject.id,
-        DomainEventTypes.RawCaptureCreated,
-      );
-      if (!domainEvent) {
-        const rawCaptureToRaise = this.constructor.RawCaptureCreated({
-          ...existingRawCapture,
-        });
-
-        domainEvent = await domainEventModel.raiseEvent(rawCaptureToRaise);
-        return { capture: existingRawCapture, domainEvent, status: 200 };
-      }
-      if (domainEvent.status !== 'sent') {
-        return {
-          domainEvent,
-          capture: existingRawCapture,
-          status: 200,
-        };
-      }
       return { capture: existingRawCapture, status: 200 };
     }
 
@@ -144,38 +96,12 @@ class RawCapture {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
-    // remove extra_attributes until implemented on mobile side
-    // const filteredAttr = rawCapture.extra_attributes.entries?.filter(
-    //   (attribute) => attribute.key === 'app_flavor',
-    // );
 
-    const rawCaptureCreated = this.constructor.RawCaptureCreated({
-      ...rawCapture,
-      // extra_attributes: filteredAttr,
-    });
-
-    const domainEvent = await domainEventModel.raiseEvent(rawCaptureCreated);
-    return { capture: rawCapture, domainEvent, status: 201 };
+    return { capture: rawCapture, status: 201 };
   }
 
   async rejectRawCapture({ rawCaptureId, rejectionReason }) {
     const rawCapture = await this.getRawCaptureById(rawCaptureId);
-    let domainEvent;
-    if (rawCapture.status === 'approved') {
-      const domainEventModel = new DomainEvent(this._session);
-      domainEvent = await domainEventModel.getDomainEventByPayloadIdAndType(
-        rawCaptureId,
-        DomainEventTypes.RawCaptureRejected,
-      );
-      if (!domainEvent) {
-        domainEvent = await domainEventModel.raiseEvent({
-          id: rawCaptureId,
-          type: DomainEventTypes.RawCaptureRejected,
-        });
-      } else if (domainEvent.status === 'sent') {
-        domainEvent = null;
-      }
-    }
 
     const updates = {
       id: rawCaptureId,
@@ -188,7 +114,7 @@ class RawCapture {
       ...updates,
     });
 
-    return { rawCapture: { ...rawCapture, ...updates }, domainEvent };
+    return { rawCapture: { ...rawCapture, ...updates } };
   }
 }
 
