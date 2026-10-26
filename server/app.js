@@ -12,7 +12,6 @@ const { swaggerDocument, swaggerOptions } = require('./handlers/swaggerDoc');
 
 const app = express();
 const config = require('../config/config');
-const { EventHandlerService } = require('./services/EventHandlerService');
 
 Sentry.init({ dsn: config.sentry_dsn });
 
@@ -63,10 +62,5 @@ const { version } = require('../package.json');
 app.get('*', function (req, res) {
   res.status(200).send(version);
 });
-
-const eventHandlerService = new EventHandlerService();
-(async () => {
-  await eventHandlerService.registerEventHandlers();
-})();
 
 module.exports = app;

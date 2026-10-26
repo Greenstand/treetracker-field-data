@@ -469,7 +469,10 @@
                           "type": "string"
                         }
                       },
-                      "required": ["key", "value"]
+                      "required": [
+                        "key",
+                        "value"
+                      ]
                     }
                   },
                   "captured_at": {
@@ -867,41 +870,6 @@
         "operationId": "get-wallet-registration-:wallet_registration_id"
       }
     },
-    "/replay-events": {
-      "post": {
-        "summary": "",
-        "operationId": "post-replay-events",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "request": {
-                      "type": "string"
-                    },
-                    "status": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
-            }
-          }
-        }
-      }
-    },
     "/raw-captures/raw_capture_id/reject": {
       "patch": {
         "summary": "",
@@ -931,7 +899,9 @@
                     "type": "integer"
                   }
                 },
-                "required": ["rejection_reason"]
+                "required": [
+                  "rejection_reason"
+                ]
               }
             }
           }
@@ -977,7 +947,9 @@
           },
           "extra_attributes": {
             "type": "object",
-            "required": ["entries"],
+            "required": [
+              "entries"
+            ],
             "properties": {
               "entries": {
                 "type": "array",
@@ -994,7 +966,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["key", "value"]
+                  "required": [
+                    "key",
+                    "value"
+                  ]
                 }
               }
             }

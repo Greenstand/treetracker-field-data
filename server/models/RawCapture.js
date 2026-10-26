@@ -158,14 +158,6 @@ class RawCapture {
     return { capture: rawCapture, domainEvent, status: 201 };
   }
 
-  async applyVerification(capture) {
-    await this._rawCaptureRepository.update({
-      id: capture.id,
-      status: 'approved',
-      updated_at: new Date().toISOString(),
-    });
-  }
-
   async rejectRawCapture({ rawCaptureId, rejectionReason }) {
     const rawCapture = await this.getRawCaptureById(rawCaptureId);
     let domainEvent;
