@@ -34,7 +34,6 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "@sentry/node": "^5.1.0",
-    "amqplib": "^0.8.0",
     "axios": "^0.27.2",
     "body-parser": "^1.18.2",
     "cors": "^2.8.5",
@@ -51,7 +50,6 @@
     "knex": "^0.95.13",
     "loglevel": "^1.8.0",
     "pg": "^8.7.1",
-    "rascal": "^12.0.1",
     "swagger-ui-express": "^5.0.0",
     "uuid": "^8.2.0",
     "uuid-by-string": "^3.0.6"

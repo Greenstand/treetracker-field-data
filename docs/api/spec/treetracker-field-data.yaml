@@ -621,31 +621,6 @@ paths:
         '422':
           $ref: '#/components/responses/InvalidParameterWalletRegID'
 
-  '/replay-events':
-    post:
-      tags:
-        - Events
-      operationId: post-replayEvents
-      summary: Replay domain events
-      description: Replay domain events in case there was any issue with its initial execution, such as not being published to the message broker queue, or not being handled correctly.
-      responses:
-        '200':
-          description: Replay request accepted.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  request:
-                    type: string
-                  status:
-                    type: string
-              examples:
-                example:
-                  $ref: '#/components/examples/ReplayEvents'
-        '415':
-          $ref: '#/components/responses/UnsupportedMediaTypeError'
-
   '/track':
     get:
       tags:
@@ -1681,10 +1656,6 @@ components:
         registered_at: '2023-10-19T00:03:43.098Z'
         bulk_pack_file_name: 2023-03-13-13-03-18_2c6450dd-f46d-43b7-9fb3-de0e418918a2_5ac9650d9d4a58062ea5d598f19bba08_sessions.json
         v1_legacy_organization: null
-    ReplayEvents:
-      value:
-        request: accepted
-        status: replay in progress...
     TrackGet:
       value:
         tracks:

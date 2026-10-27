@@ -3,7 +3,6 @@ const {
   deviceConfigurationObject,
 } = require('./device-configuration-api.spec');
 const { sessionObject } = require('./session-api.spec');
-const { DomainEventTypes } = require('../server/utils/enums');
 
 const captureRequestObject = {
   id: '21ae129d-4233-4705-ac24-f4c96051e5ef',
@@ -36,17 +35,6 @@ const captureWithExistingTree = {
   id: '55a17810-5937-4427-b9dd-dc6461e584e2',
 };
 
-const domainEventObject = {
-  id: 'e876107a-2a7c-442b-9e57-880d596e1025',
-  payload: {
-    id: capture.id,
-    type: DomainEventTypes.RawCaptureCreated,
-  },
-  status: 'raised',
-  created_at: '2021-05-04 11:24:43',
-  updated_at: '2021-05-04 11:24:43',
-};
-
 const insertTestCapture = async (knex, knexLegacyDB) => {
   await knexLegacyDB('planter').insert({
     email: walletRegistrationObject.wallet,
@@ -59,7 +47,6 @@ const insertTestCapture = async (knex, knexLegacyDB) => {
   });
   await knex('wallet_registration').insert(walletRegistrationObject);
   await knex('session').insert({ ...sessionObject, created_at: new Date() });
-  await knex('domain_event').insert(domainEventObject);
   const tree = await knexLegacyDB('trees')
     .insert({
       uuid: capture.id,
@@ -87,5 +74,4 @@ module.exports = {
   capture,
   insertTestCapture,
   captureWithExistingTree,
-  domainEventObject,
 };

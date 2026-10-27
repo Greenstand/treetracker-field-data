@@ -6,7 +6,6 @@ const {
   rawCaptureSwagger,
   rawCaptureComponent,
 } = require('./rawCaptureHandler/docs');
-const { replayEventPostSwagger } = require('./replayEventHandler/docs');
 const { sessionSwagger, sessionComponent } = require('./sessionHandler/docs');
 const { trackSwagger, trackComponent } = require('./tracksHandler/docs');
 const {
@@ -18,7 +17,6 @@ const { version } = require('../../package.json');
 const paths = {
   ...deviceConfigurationSwagger,
   ...rawCaptureSwagger,
-  ...replayEventPostSwagger,
   ...sessionSwagger,
   ...walletRegistrationSwagger,
   ...trackSwagger,

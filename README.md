@@ -76,12 +76,6 @@ node_modules/db-migrate/bin/db-migrate up --migrations-dir=database/migrations
 
 See here to learn more about db-migrate: https://db-migrate.readthedocs.io/en/latest/
 
-This project publishes messages and hence relies on RabbitMQ messaging service. In the `.env` file in addition to the database, set the value for the rabbitmq url. Reach out in `development` channel in slack for the url.
-
-```
-RABBIT_MQ_URL=<value for the RabbitMQ messaging platform>
-```
-
 For reference use the file .env.example that lists the necessary environment variables to run the application.
 
 # Architecture of this project

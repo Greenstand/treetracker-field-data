@@ -29,12 +29,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      rabbitmq:
-        image: rabbitmq
-        env:
-          RABBITMQ_DEFAULT_USER: rabbitmq
-          RABBITMQ_DEFAULT_PASS: rabbitmq
-
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js 20.x
@@ -65,7 +59,6 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@postgres/postgres
           DATABASE_URL_LEGACYDB: postgresql://postgres:postgres@postgres/postgres
-          RABBIT_MQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq
 
   release:
     name: Release

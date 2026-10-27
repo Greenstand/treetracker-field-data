@@ -3,7 +3,6 @@ const LegacySession = require('../infra/database/Sessions/LegacySession');
 const RawCapture = require('../models/RawCapture');
 const LegacyTree = require('../models/LegacyTree');
 const SessionModel = require('../models/SessionModel');
-const QueueService = require('./QueueService');
 const LegacyAPIService = require('./LegacyAPIService');
 const HttpError = require('../utils/HttpError');
 
@@ -56,21 +55,13 @@ class RawCaptureService {
 
       await this._session.beginTransaction();
 
-      const { capture, status, domainEvent } =
-        await this._rawCapture.createRawCapture({
-          ...rawCaptureObject,
-          reference_id: legacyTree.id,
-        });
+      const { capture, status } = await this._rawCapture.createRawCapture({
+        ...rawCaptureObject,
+        reference_id: legacyTree.id,
+      });
 
       await this._session.commitTransaction();
       await legacySession.commitTransaction();
-
-      if (domainEvent) {
-        const queueService = new QueueService(this._session);
-        await queueService.init();
-        queueService.publishRawCaptureCreatedMessage(domainEvent);
-        queueService.tearDown();
-      }
 
       return { capture, status };
     } catch (e) {
@@ -105,20 +96,13 @@ class RawCaptureService {
         rejectionReason,
       });
 
-      const { rawCapture: updatedRawCapture, domainEvent } =
+      const { rawCapture: updatedRawCapture } =
         await this._rawCapture.rejectRawCapture({
           rawCaptureId,
           rejectionReason,
         });
 
       await this._session.commitTransaction();
-
-      if (domainEvent) {
-        const queueService = new QueueService(this._session);
-        await queueService.init();
-        queueService.publishRawCaptureRejectedMessage(domainEvent);
-        queueService.tearDown();
-      }
 
       return updatedRawCapture;
     } catch (e) {
