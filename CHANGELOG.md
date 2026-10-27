@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/Greenstand/treetracker-field-data/compare/v1.14.1...v1.15.0) (2026-10-27)
+
+
+### Features
+
+* add root check columns ([c404c34](https://github.com/Greenstand/treetracker-field-data/commit/c404c341793dc6b3c1262ab4c38eb1018caa5e27))
+
 ## [1.14.1](https://github.com/Greenstand/treetracker-field-data/compare/v1.14.0...v1.14.1) (2024-11-22)
 
 
